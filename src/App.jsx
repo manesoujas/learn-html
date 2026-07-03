@@ -10,6 +10,7 @@ import {
   Award,
   Download,
   Printer,
+  Menu,
 } from "lucide-react";
 
 /* ---------------------------------------------------------
@@ -397,6 +398,7 @@ export default function LearnHTML() {
   const [completed, setCompleted] = useState(new Set([TOPICS[0].id]));
   const [experimentOpen, setExperimentOpen] = useState(false);
   const [code, setCode] = useState(TOPICS[0].starterCode);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // Quiz + certificate state
   const [questions, setQuestions] = useState(() => buildShuffledQuestions());
@@ -415,6 +417,7 @@ export default function LearnHTML() {
 
   function selectTopic(id) {
     setActiveId(id);
+    setMobileNavOpen(false);
     if (id !== "quiz") {
       const topic = TOPICS.find((t) => t.id === id);
       setCode(topic.starterCode);
@@ -469,6 +472,13 @@ export default function LearnHTML() {
         <IntroScreen onStart={() => setScreen("app")} />
       ) : (
         <div style={styles.shell} className="lu-shell">
+          <MobileTopBar
+            title={isQuizView ? "Final Assessment" : activeTopic.title}
+            onMenuClick={() => setMobileNavOpen(true)}
+          />
+          {mobileNavOpen && (
+            <div style={styles.backdrop} className="lu-backdrop" onClick={() => setMobileNavOpen(false)} />
+          )}
           <Sidebar
             activeId={activeId}
             completed={completed}
@@ -476,6 +486,8 @@ export default function LearnHTML() {
             progress={progress}
             quizPassed={quizPassed}
             allTopicsDone={allTopicsDone}
+            mobileOpen={mobileNavOpen}
+            onClose={() => setMobileNavOpen(false)}
           />
           {isQuizView ? (
             <QuizPanel
@@ -545,13 +557,45 @@ function IntroScreen({ onStart }) {
   );
 }
 
-function Sidebar({ activeId, completed, onSelect, progress, quizPassed, allTopicsDone }) {
+function MobileTopBar({ title, onMenuClick }) {
   return (
-    <aside style={styles.sidebar} className="lu-sidebar">
+    <div style={styles.mobileTopBar} className="lu-mobile-topbar">
+      <button style={styles.mobileMenuButton} onClick={onMenuClick} aria-label="Open topic menu">
+        <Menu size={20} />
+      </button>
+      <span style={styles.mobileTopBarTitle}>{title}</span>
+      <span style={{ width: 36 }} />
+    </div>
+  );
+}
+
+function Sidebar({
+  activeId,
+  completed,
+  onSelect,
+  progress,
+  quizPassed,
+  allTopicsDone,
+  mobileOpen,
+  onClose,
+}) {
+  return (
+    <aside
+      style={styles.sidebar}
+      className={`lu-sidebar${mobileOpen ? " lu-sidebar-open" : ""}`}
+    >
       <div style={styles.sidebarHeader}>
         <div style={styles.sidebarTitleRow}>
           <Code2 size={16} color="#22d3ee" />
           <span style={styles.sidebarTitle}>learn-html/</span>
+          <button
+            style={styles.mobileCloseButton}
+            className="lu-sidebar-close"
+            onClick={onClose}
+            aria-label="Close menu"
+          >
+            <X size={18} />
+          </button>
         </div>
         <div style={styles.progressTrack}>
           <div style={{ ...styles.progressFill, width: `${progress}%` }} />
@@ -910,22 +954,32 @@ const globalCss = `
   }
   @media (max-width: 900px) {
     .lu-shell { flex-direction: column !important; }
+    .lu-mobile-topbar { display: flex !important; }
+    .lu-sidebar-close { display: flex !important; }
     .lu-sidebar {
-      width: 100% !important;
-      height: auto !important;
-      max-height: 240px !important;
-      position: relative !important;
-      top: auto !important;
-      border-right: none !important;
-      border-bottom: 1px solid rgba(148,163,184,0.12) !important;
+      position: fixed !important;
+      top: 0 !important;
+      left: -100% !important;
+      height: 100vh !important;
+      width: 82% !important;
+      max-width: 320px !important;
+      max-height: none !important;
+      background: #0f1521 !important;
+      z-index: 70 !important;
+      transition: left 0.28s ease !important;
+      box-shadow: 0 0 40px rgba(0,0,0,0.5) !important;
     }
-    .lu-main { padding: 24px 20px !important; }
+    .lu-sidebar-open {
+      left: 0 !important;
+    }
+    .lu-backdrop { display: block !important; }
+    .lu-main { padding: 20px 18px !important; }
     .lu-demo-grid { grid-template-columns: 1fr !important; }
     .lu-overlay-grid { grid-template-columns: 1fr !important; }
     .lu-overlay-panel { height: 94vh !important; width: 100% !important; }
   }
   @media (max-width: 520px) {
-    .lu-main { padding: 18px 14px !important; }
+    .lu-main { padding: 16px 14px !important; }
   }
   @media print {
     body * { visibility: hidden; }
@@ -1044,6 +1098,52 @@ const styles = {
     height: "100vh",
     position: "sticky",
     top: 0,
+  },
+  mobileTopBar: {
+    display: "none",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "14px 16px",
+    borderBottom: "1px solid rgba(148,163,184,0.12)",
+    background: "rgba(15,21,33,0.9)",
+    backdropFilter: "blur(10px)",
+    position: "sticky",
+    top: 0,
+    zIndex: 40,
+  },
+  mobileMenuButton: {
+    background: "rgba(148,163,184,0.1)",
+    border: "none",
+    borderRadius: 8,
+    color: "#e2e8f0",
+    padding: 8,
+    display: "flex",
+  },
+  mobileTopBarTitle: {
+    fontFamily: FONT_MONO,
+    fontSize: 13,
+    fontWeight: 600,
+    color: "#e2e8f0",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    maxWidth: "70%",
+  },
+  mobileCloseButton: {
+    display: "none",
+    background: "rgba(148,163,184,0.1)",
+    border: "none",
+    borderRadius: 6,
+    color: "#94a3b8",
+    padding: 6,
+    marginLeft: "auto",
+  },
+  backdrop: {
+    display: "none",
+    position: "fixed",
+    inset: 0,
+    background: "rgba(5,7,12,0.6)",
+    zIndex: 65,
   },
   sidebarHeader: {
     padding: "20px 18px 16px",
