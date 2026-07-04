@@ -536,7 +536,7 @@ function IntroScreen({ onStart }) {
       <div style={styles.introContent}>
         <div style={styles.introEyebrow}>
           <Terminal size={14} />
-          <span>DEVCLUB · LEVEL UP 2.0</span>
+          <span>DEVCLUB_TRCAC · LEVEL UP</span>
         </div>
         <h1 style={styles.introTitle}>
           Let's learn <span style={styles.introAccent}>HTML</span>.
@@ -550,7 +550,7 @@ function IntroScreen({ onStart }) {
           Get Started <ChevronRight size={18} />
         </button>
         <div style={styles.introFooter}>
-          Built by DevClub for the Level Up program
+          Built by Soujas Mane for the DevClub_TRCAC Level Up program
         </div>
       </div>
     </div>
@@ -754,18 +754,37 @@ function QuizPanel({
   certGenerated,
   setCertGenerated,
 }) {
+  const certIdRef = useRef(null);
   const total = questions.length;
   const answeredCount = Object.keys(answers).length;
   const percent = Math.round((score / total) * 100);
 
   if (certGenerated) {
+    const certId = certIdRef.current || (certIdRef.current = generateCertId(certName));
+    const issueDate = new Date();
+    const linkedInUrl =
+      "https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME" +
+      `&name=${encodeURIComponent("HTML — Level Up")}` +
+      `&organizationName=${encodeURIComponent("Level Up")}` +
+      `&issueYear=${issueDate.getFullYear()}` +
+      `&issueMonth=${issueDate.getMonth() + 1}` +
+      `&certId=${encodeURIComponent(certId)}`;
+
     return (
       <main style={styles.main} className="lu-main">
-        <Certificate name={certName} score={score} total={total} percent={percent} />
-        <div style={{ marginTop: 20, display: "flex", gap: 12 }}>
+        <Certificate name={certName} score={score} total={total} percent={percent} certId={certId} />
+        <div style={styles.certActionsRow} className="lu-cert-actions-row">
           <button style={styles.nextButton} onClick={() => window.print()}>
-            <Printer size={16} /> Print / Save as PDF
+            <Printer size={16} /> Download Certificate (PDF)
           </button>
+          <a
+            href={linkedInUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={styles.linkedInButton}
+          >
+            Add to LinkedIn
+          </a>
           <button style={styles.ghostButton} onClick={() => setCertGenerated(false)}>
             Back to results
           </button>
@@ -901,38 +920,51 @@ function QuizPanel({
   );
 }
 
-function Certificate({ name, score, total, percent }) {
-  const today = new Date().toLocaleDateString("en-IN", {
+function generateCertId(name) {
+  const namePart = (name || "XX").replace(/\s+/g, "").slice(0, 3).toUpperCase();
+  const timePart = Date.now().toString(36).toUpperCase().slice(-5);
+  const randPart = Math.random().toString(36).toUpperCase().slice(2, 5);
+  return `LU-HTML-${namePart}${timePart}${randPart}`;
+}
+
+function Certificate({ name, score, total, percent, certId }) {
+  const dateLabel = new Date().toLocaleDateString("en-IN", {
     day: "numeric",
     month: "long",
     year: "numeric",
   });
+
   return (
     <div style={styles.certWrap} className="certificate-print-area">
       <div style={styles.certBorder}>
         <div style={styles.certEyebrow}>
           <Terminal size={14} color="#22d3ee" />
-          DEVCLUB · LEVEL UP 2.0
+          LEVEL UP
         </div>
         <div style={styles.certHeading}>Certificate of Completion</div>
         <div style={styles.certSub}>This certifies that</div>
         <div style={styles.certName}>{name}</div>
         <div style={styles.certSub}>
-          has successfully completed the <strong>HTML</strong> module of the DevClub
-          Level Up 2.0 program, passing the final assessment with a score of{" "}
-          <strong>{score}/{total} ({percent}%)</strong>.
+          has successfully completed the <strong>HTML</strong> module of the Level
+          Up program — covering document structure, semantic markup, forms, media,
+          tables, and accessibility fundamentals — and passed the final
+          certification assessment with a score of{" "}
+          <strong>{score}/{total} ({percent}%)</strong>, demonstrating readiness to
+          build real, accessible web pages from scratch.
         </div>
         <div style={styles.certFooterRow}>
           <div style={styles.certSignBlock}>
             <div style={styles.certSignLine} />
-            <div style={styles.certSignLabel}>President, DevClub</div>
+            <div style={styles.certSignName}>LEVEL UP</div>
+            <div style={styles.certSignLabel}>Certified Learning Program</div>
           </div>
           <div style={styles.certSeal}>
             <Award size={30} color="#0a0e17" />
           </div>
           <div style={styles.certSignBlock}>
             <div style={styles.certSignLine} />
-            <div style={styles.certSignLabel}>{today}</div>
+            <div style={styles.certSignName}>{certId}</div>
+            <div style={styles.certSignLabel}>Issued on {dateLabel}</div>
           </div>
         </div>
       </div>
@@ -982,11 +1014,16 @@ const globalCss = `
     .lu-main { padding: 16px 14px !important; }
   }
   @media print {
+    @page {
+      size: A4 landscape;
+      margin: 10mm;
+    }
     body * { visibility: hidden; }
     .certificate-print-area, .certificate-print-area * { visibility: visible; }
     .certificate-print-area {
       position: absolute; top: 0; left: 0; width: 100%; margin: 0;
     }
+    .lu-cert-actions-row { display: none !important; }
   }
 `;
 
@@ -1585,37 +1622,42 @@ const styles = {
     padding: "10px 0 20px",
   },
   certBorder: {
-    maxWidth: 720,
+    maxWidth: 980,
+    aspectRatio: "297 / 210",
     margin: "0 auto",
     border: "1.5px solid rgba(34,211,238,0.4)",
     outline: "1px solid rgba(148,163,184,0.15)",
     outlineOffset: 6,
     borderRadius: 16,
-    padding: "40px 44px",
+    padding: "36px 60px",
     textAlign: "center",
     background: "rgba(19,26,41,0.6)",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
   },
   certEyebrow: {
     display: "inline-flex",
     alignItems: "center",
+    justifyContent: "center",
     gap: 8,
     fontFamily: FONT_MONO,
     fontSize: 11,
     letterSpacing: 1.5,
     color: "#22d3ee",
-    marginBottom: 18,
+    marginBottom: 14,
   },
   certHeading: {
     fontFamily: FONT_DISPLAY,
     fontSize: 30,
     fontWeight: 700,
-    marginBottom: 18,
+    marginBottom: 14,
   },
   certSub: {
     color: "#94a3b8",
     fontSize: 14.5,
     lineHeight: 1.7,
-    maxWidth: 520,
+    maxWidth: 640,
     margin: "0 auto 10px",
   },
   certName: {
@@ -1623,27 +1665,34 @@ const styles = {
     fontSize: 30,
     color: "#22d3ee",
     textShadow: "0 0 24px rgba(34,211,238,0.4)",
-    margin: "10px 0 18px",
+    margin: "8px 0 14px",
     fontWeight: 700,
   },
   certFooterRow: {
     display: "flex",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "center",
-    gap: 32,
-    marginTop: 36,
+    gap: 48,
+    marginTop: 28,
   },
   certSignBlock: {
     textAlign: "center",
   },
   certSignLine: {
-    width: 130,
+    width: 150,
     borderTop: "1px solid rgba(148,163,184,0.3)",
-    marginBottom: 6,
+    marginBottom: 8,
+  },
+  certSignName: {
+    fontFamily: FONT_DISPLAY,
+    fontSize: 14,
+    fontWeight: 700,
+    color: "#e2e8f0",
+    marginBottom: 2,
   },
   certSignLabel: {
     fontFamily: FONT_MONO,
-    fontSize: 11,
+    fontSize: 10.5,
     color: "#64748b",
   },
   certSeal: {
@@ -1655,5 +1704,26 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
+    marginTop: 12,
+  },
+  certActionsRow: {
+    marginTop: 20,
+    display: "flex",
+    gap: 12,
+    flexWrap: "wrap",
+    justifyContent: "center",
+  },
+  linkedInButton: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    background: "#0a66c2",
+    color: "#fff",
+    textDecoration: "none",
+    border: "none",
+    borderRadius: 8,
+    padding: "10px 20px",
+    fontWeight: 700,
+    fontSize: 13.5,
   },
 };
